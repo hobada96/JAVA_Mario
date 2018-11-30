@@ -2,6 +2,7 @@ package Test;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -12,28 +13,38 @@ import java.awt.event.MouseListener;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import javafx.scene.Scene;
+
 import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Random;
+import java.util.Set;
 
 public class Game {
 
 	JFrame frame;
-	public static final int WIDTH = 1200;
-	public static final int HEIGHT = (int) (WIDTH * 0.618);
+	public static int WIDTH = 1200;
+	public static int HEIGHT = (int) (WIDTH * 0.618);
 	public static final double SPEED = 0.5;
 	public static final int SIZE = 25;
 	public static final int JUMP_POWER = 50;
 	public static final double GRAVITY = 9.8;
-	public static final int GROUND = HEIGHT - 100; // 650쯤
+	public static int GROUND = HEIGHT - 100; // 650쯤
 	public static double pos_x = WIDTH / 2;
-	public static double pos_y = HEIGHT / 2;
+	public static double pos_y = HEIGHT - 110;
 	public static double vec_x = 0;
 	public static double vec_y = 0;
 	public static double vec2_y = 0;
 	public static double vec_jump = 0;
 	public static double time = 0;
+	public static int MAX_WIDTH = WIDTH;
+	public static int MAX_HEIGHT = HEIGHT;
+	public static boolean SCENE_SWITCH = false;
+	public static int round = 0;
 
 	ArrayList<PlatForm> list_plat = new ArrayList<>();
+	Hashtable<String, Item> table_item = new Hashtable<>();
 
 	public Game() {
 		frame = new JFrame("GAME");
@@ -49,14 +60,26 @@ public class Game {
 		frame.addKeyListener(listener_key);
 		frame.addMouseListener(listener_click);
 
+		/// 단 한번 초기화 되는부분
+		setMap();
+
+		///
 	}
 
 	public void start() {
 		while (true) {
-
+			// 0.016초마다 계속 초기화 되는부분
 			time += 0.0166666666667;
+
 			Ground();
 			Jump();
+			GetItems();
+
+			// if (SCENE_SWITCH) {
+			if (Scene_change(MAX_WIDTH, MAX_HEIGHT)) {
+				SCENE_SWITCH = false;
+			}
+			// }
 
 			pos_x += vec_x * 5 * SPEED;
 			pos_y += -vec_jump / 10 + (vec_y * SPEED);
@@ -108,11 +131,76 @@ public class Game {
 		}
 	}
 
+	public void setMap() {
+
+		list_plat.add(new PlatForm(100, 610, 250, 640));
+		list_plat.add(new PlatForm(900, 610, 1050, 640));
+		list_plat.add(new PlatForm(700, 510, 850, 540));
+		list_plat.add(new PlatForm(500, 410, 650, 440));
+		list_plat.add(new PlatForm(700, 310, 850, 340));
+		list_plat.add(new PlatForm(900, 210, 1050, 240));
+		table_item.put("item_1", new Item_1(965, 150));
+
+	}
+
+	public void GetItems() {
+
+		if (table_item.isEmpty())
+			return;
+
+		Set<String> keys = table_item.keySet();
+		Iterator<String> iterator = keys.iterator();
+
+		while (iterator.hasNext()) {
+			String str = iterator.next();
+			Item item = table_item.get(str);
+			if (contains(item)) {
+				item.event();
+				item.delete();
+			}
+
+		}
+	}
+
 	public void Jump() {
 		if (vec_jump > 0) {
 			vec_jump -= GRAVITY * time * 10 / 60;
 		} else
 			vec_jump = 0;
+	}
+
+	public boolean contains(Item item) {
+		double item_x = item.getPos_x();
+		double item_y = item.getPos_y();
+		if (pos_x - SIZE <= item_x && pos_x + SIZE >= item_x && pos_y - SIZE <= item_y && pos_y + SIZE >= item_y) {
+
+			return true;
+		}
+
+		else
+			return false;
+	}
+
+	public boolean Scene_change(int max_width, int max_height) {
+		if (round == 1) {
+			Game.MAX_WIDTH = 1600;
+			max_width = 1600;
+			
+		}
+
+		if (max_width > WIDTH)
+			WIDTH = WIDTH + 5;
+		if (max_height > HEIGHT)
+			HEIGHT++;
+
+		frame.setSize(WIDTH, HEIGHT);
+
+		if (WIDTH < max_width || HEIGHT < max_height) {
+			return false;
+		} else {
+
+			return true;
+		}
 	}
 
 	private class MyPanel extends JPanel {
@@ -124,11 +212,27 @@ public class Game {
 
 			g.setColor(Color.BLUE);
 			g.fillRect(100, 580, 150, 30);// (100,610)-(250,610)-(250,640)-(100,640) ==> (x,y+30)....
-			list_plat.add(new PlatForm(100, 610, 250, 640));
 
 			g.setColor(Color.BLUE);
 			g.fillRect(900, 580, 150, 30);
-			list_plat.add(new PlatForm(900, 610, 1050, 640));
+
+			g.setColor(Color.BLUE);
+			g.fillRect(700, 480, 150, 30);
+
+			g.setColor(Color.BLUE);
+			g.fillRect(500, 380, 150, 30);
+
+			g.setColor(Color.BLUE);
+			g.fillRect(700, 280, 150, 30);
+
+			g.setColor(Color.BLUE);
+			g.fillRect(900, 180, 150, 30);
+
+			g.setColor(Color.BLACK);
+			g.fillOval((int) table_item.get("item_1").getPos_x(), (int) table_item.get("item_1").getPos_y(),
+					(int) (SIZE / 1.5), (int) (SIZE / 1.5));
+
+			// Graphics2D g2 = (Graphics2D) g;
 
 		}
 	}
