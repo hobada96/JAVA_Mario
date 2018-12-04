@@ -3,6 +3,7 @@ package Test;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -26,7 +27,7 @@ public class Game {
 	JFrame frame;
 	public static int WIDTH = 1200;
 	public static int HEIGHT = (int) (WIDTH * 0.618);
-	public static final double SPEED = 0.5;
+	public static final double SPEED = 0.65;
 	public static final int SIZE = 25;
 	public static final int JUMP_POWER = 50;
 	public static final double GRAVITY = 9.8;
@@ -40,12 +41,15 @@ public class Game {
 	public static double time = 0;
 	public static int MAX_WIDTH = WIDTH;
 	public static int MAX_HEIGHT = HEIGHT;
-	public static boolean SCENE_SWITCH = false;
+	/** true => 창커짐 , false => 창작아짐 */
+	public static boolean SCENE_SWITCH = true;
+	public static boolean WINDOW_SWITCH = false;
 	public static int round = 0;
 
 	ArrayList<PlatForm> list_plat = new ArrayList<>();
 	Hashtable<String, Item> table_item = new Hashtable<>();
 
+	/** 생성자 클래스 (한번초기화되는부분) */
 	public Game() {
 		frame = new JFrame("GAME");
 		MyPanel panel = new MyPanel();
@@ -60,12 +64,15 @@ public class Game {
 		frame.addKeyListener(listener_key);
 		frame.addMouseListener(listener_click);
 
+		// frame.setLocation(100,500);
+
 		/// 단 한번 초기화 되는부분
 		setMap();
 
 		///
 	}
 
+	/** 스케줄러(매번초기화됨) */
 	public void start() {
 		while (true) {
 			// 0.016초마다 계속 초기화 되는부분
@@ -74,6 +81,7 @@ public class Game {
 			Ground();
 			Jump();
 			GetItems();
+			MoveWindow();
 
 			// if (SCENE_SWITCH) {
 			if (Scene_change(MAX_WIDTH, MAX_HEIGHT)) {
@@ -95,6 +103,7 @@ public class Game {
 		}
 	}
 
+	/** 충돌구현 */
 	public void Ground() {
 		if (pos_y <= GROUND) {
 			vec_y = 0.5 * GRAVITY * time * time;
@@ -111,8 +120,8 @@ public class Game {
 				time = 0;
 			}
 			// 아래에서 위로 충돌
-			if (pos_x >= plat.getPoint_1_x() && pos_x <= plat.getPoint_2_x() && pos_y + 45 >= plat.getPoint_2_y() + 5
-					&& pos_y + 45 <= plat.getPoint_2_y() + 15) {
+			if (pos_x >= plat.getPoint_1_x() - 5 && pos_x <= plat.getPoint_2_x() + 5
+					&& pos_y + 45 >= plat.getPoint_2_y() + 5 && pos_y + 45 <= plat.getPoint_2_y() + 15) {
 				vec_jump = 0;
 				if (time > 1) {
 					time = 0;
@@ -120,17 +129,18 @@ public class Game {
 			}
 			// 왼쪽에서 오른쪽으로 충돌
 			if (pos_y + 45 >= plat.getPoint_1_y() && pos_y + 45 <= plat.getPoint_2_y() && pos_x <= plat.getPoint_1_x()
-					&& pos_x >= plat.getPoint_1_x() - SIZE / 1.5) {
-				pos_x = plat.getPoint_1_x() - SIZE / 1.5;
+					&& pos_x >= plat.getPoint_1_x() - SIZE / 2.0) {
+				pos_x = plat.getPoint_1_x() - SIZE / 2.0;
 			}
 			// 오른쪽에서 왼쪽으로 충돌
 			if (pos_y + 45 >= plat.getPoint_1_y() && pos_y + 45 <= plat.getPoint_2_y() && pos_x >= plat.getPoint_2_x()
-					&& pos_x <= plat.getPoint_2_x() + SIZE / 1.8) {
-				pos_x = plat.getPoint_2_x() + SIZE / 1.8;
+					&& pos_x <= plat.getPoint_2_x() + SIZE / 2.5) {
+				pos_x = plat.getPoint_2_x() + SIZE / 2.5;
 			}
 		}
 	}
 
+	/** 초기 맵, 초기 아이템생성(생성자안에사용됨) */
 	public void setMap() {
 
 		list_plat.add(new PlatForm(100, 610, 250, 640));
@@ -140,9 +150,11 @@ public class Game {
 		list_plat.add(new PlatForm(700, 310, 850, 340));
 		list_plat.add(new PlatForm(900, 210, 1050, 240));
 		table_item.put("item_1", new Item_1(965, 150));
+		table_item.put("item_2", new Item_2(1500, 600));
 
 	}
 
+	/** 아이템획득시 이벤트관리메소드 */
 	public void GetItems() {
 
 		if (table_item.isEmpty())
@@ -162,6 +174,7 @@ public class Game {
 		}
 	}
 
+	/** 점프시 가속도,위치관리메소드 */
 	public void Jump() {
 		if (vec_jump > 0) {
 			vec_jump -= GRAVITY * time * 10 / 60;
@@ -169,6 +182,7 @@ public class Game {
 			vec_jump = 0;
 	}
 
+	/** 아이템 먹었는지 체크하는 메소드 */
 	public boolean contains(Item item) {
 		double item_x = item.getPos_x();
 		double item_y = item.getPos_y();
@@ -181,33 +195,63 @@ public class Game {
 			return false;
 	}
 
+	/** 화면크기조절 메소드 */
 	public boolean Scene_change(int max_width, int max_height) {
-		if (round == 1) {
-			Game.MAX_WIDTH = 1600;
-			max_width = 1600;
-			
-		}
+		/*
+		 * if (round == 1) { Game.MAX_WIDTH = 1600; max_width = 1600;
+		 * //table_item.get("item_1").setPos_x(); //table_item.get("item_1").setPos_y();
+		 * }
+		 */
 
-		if (max_width > WIDTH)
-			WIDTH = WIDTH + 5;
-		if (max_height > HEIGHT)
-			HEIGHT++;
+		if (SCENE_SWITCH) { // 크기 커짐
+			if (max_width > WIDTH)
+				WIDTH = WIDTH + 5;
+			if (max_height > HEIGHT)
+				HEIGHT = HEIGHT + 5;
 
-		frame.setSize(WIDTH, HEIGHT);
+			frame.setSize(WIDTH, HEIGHT);
 
-		if (WIDTH < max_width || HEIGHT < max_height) {
-			return false;
-		} else {
+			if (WIDTH < max_width || HEIGHT < max_height) {
+				return false;
+			} else {
 
-			return true;
+				return true;
+			}
+
+		} else { /// 크기작아짐
+
+			if (max_width < WIDTH)
+				WIDTH = WIDTH - 15;
+			if (max_height < HEIGHT)
+				HEIGHT = HEIGHT - 15;
+
+			frame.setSize(WIDTH, HEIGHT);
+
+			if (WIDTH > max_width || HEIGHT > max_height) {
+				return false;
+			} else {
+
+				return true;
+			}
 		}
 	}
 
+	/** 창이동 메소드 */
+	public boolean MoveWindow() {
+
+		if (!WINDOW_SWITCH)
+			return false;
+		frame.setLocation((int) (800 - (pos_x * 1.0)), (int) (700 - (pos_y * 1.0)));
+
+		return true;
+	}
+
+	/** 패널 클래스(화면생성, 스케줄러에서 사용됨) */
 	private class MyPanel extends JPanel {
 		public void paintComponent(Graphics g) {
 			super.paintComponent(g);
 
-			g.setColor(Color.RED);
+			g.setColor(Color.GREEN);
 			g.fillOval((int) pos_x, (int) pos_y, SIZE, SIZE);
 
 			g.setColor(Color.BLUE);
@@ -232,11 +276,16 @@ public class Game {
 			g.fillOval((int) table_item.get("item_1").getPos_x(), (int) table_item.get("item_1").getPos_y(),
 					(int) (SIZE / 1.5), (int) (SIZE / 1.5));
 
+			g.setColor(Color.RED);
+			g.fillOval((int) table_item.get("item_2").getPos_x(), (int) table_item.get("item_2").getPos_y(),
+					(int) (SIZE / 1.5), (int) (SIZE / 1.5));
+
 			// Graphics2D g2 = (Graphics2D) g;
 
 		}
 	}
 
+	/** 키보드입력메소드(스케줄러외의 다른스케줄러에서 사용됨) */
 	public class listen_key implements KeyListener {
 
 		@Override
@@ -306,6 +355,7 @@ public class Game {
 
 	}
 
+	/** 마우스입력메소드(스케줄러외의 다른스케줄러에서 사용됨) */
 	public class listen_click implements MouseListener {
 
 		@Override

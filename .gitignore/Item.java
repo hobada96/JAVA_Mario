@@ -36,6 +36,7 @@ abstract public class Item {
 
 }
 
+/** 화면크기 조절아이템 */
 class Item_1 extends Item {
 
 	public Item_1(double x, double y) {
@@ -47,8 +48,50 @@ class Item_1 extends Item {
 	public void event() {
 		// TODO Auto-generated method stub
 		Game.round++;
-		Game.SCENE_SWITCH = true;
-		System.out.println("event_get_item_1 , " + Game.round);
+		
+		if (Game.round == 1) { //창커짐
+			Game.MAX_WIDTH = 1600;
+			Game.SCENE_SWITCH = true;
+		}
+
+		if (Game.round == 2) { //창줄음
+			Game.MAX_WIDTH = 800;
+			Game.MAX_HEIGHT = 800;
+			Game.SCENE_SWITCH = false;
+		}
+
+		System.out.println("event_get_item_1 , round : " + Game.round);
+
+	}
+}
+
+/** 윈도우창 이동 조절아이템 */
+class Item_2 extends Item {
+
+	public Item_2(double x, double y) {
+		super(x, y);
+		// TODO Auto-generated constructor stub
+	}
+
+	@Override
+	public void event() {
+		// TODO Auto-generated method stub
+		Game.WINDOW_SWITCH = true;
+		System.out.println("event_get_item_2 , WindowMove ");
+	}
+
+}
+
+class Item_Bad extends Item {
+
+	public Item_Bad(double x, double y) {
+		super(x, y);
+		// TODO Auto-generated constructor stub
+	}
+
+	@Override
+	public void event() {
+		// TODO Auto-generated method stub
 
 	}
 
