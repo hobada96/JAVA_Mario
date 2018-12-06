@@ -48,18 +48,19 @@ class Item_1 extends Item {
 	public void event() {
 		// TODO Auto-generated method stub
 		Game.round++;
-		
-		if (Game.round == 1) { //창커짐
+		this.delete();
+		if (Game.round == 1) { // 창커짐
 			Game.MAX_WIDTH = 1600;
 			Game.SCENE_SWITCH = true;
+			this.setPos_x(100);
+			this.setPos_y(50);
 		}
 
-		if (Game.round == 2) { //창줄음
-			Game.MAX_WIDTH = 800;
-			Game.MAX_HEIGHT = 800;
+		if (Game.round == 2) { // 창줄음
+			Game.MAX_WIDTH = 300;
+			Game.MAX_HEIGHT = 200;
 			Game.SCENE_SWITCH = false;
 		}
-
 		System.out.println("event_get_item_1 , round : " + Game.round);
 
 	}
@@ -78,10 +79,12 @@ class Item_2 extends Item {
 		// TODO Auto-generated method stub
 		Game.WINDOW_SWITCH = true;
 		System.out.println("event_get_item_2 , WindowMove ");
+		this.delete();
 	}
 
 }
 
+/** 먹으면 다시시작하는 아이템 */
 class Item_Bad extends Item {
 
 	public Item_Bad(double x, double y) {
@@ -92,7 +95,8 @@ class Item_Bad extends Item {
 	@Override
 	public void event() {
 		// TODO Auto-generated method stub
-
+		Game.pos_x = Game.round_x;
+		Game.pos_y = Game.round_y;
 	}
 
 }

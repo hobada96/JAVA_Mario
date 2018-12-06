@@ -39,10 +39,14 @@ public class Game {
 	public static final double GRAVITY = 9.8;
 	/** 땅바닥 좌표 */
 	public static int GROUND = HEIGHT - 100; // 650쯤
-	/** 케릭터 초기 X좌표 */
+	/** 케릭터 현재 X 좌표 */
 	public static double pos_x = WIDTH / 2;
-	/** 케릭터 초기 Y좌표 */
+	/** 케릭터 현재 Y 좌표 */
 	public static double pos_y = HEIGHT - 110;
+	/** 라운드 초기 X 좌표 */
+	public static double round_x = WIDTH / 2;
+	/** 라운드 초기 Y 좌표 */
+	public static double round_y = WIDTH / 2;
 	/** 케릭터 x축으로 가는힘 */
 	public static double vec_x = 0;
 	/** 케릭터 y축으로 가는힘 */
@@ -57,15 +61,17 @@ public class Game {
 	public static int MAX_WIDTH = WIDTH;
 	/** 창크기 변경시 조건이되는 최대 창높이 */
 	public static int MAX_HEIGHT = HEIGHT;
-	/** true => 창커짐 , false => 창작아짐 */
+	/** MAX값에맞게 : true => 창 커짐 , false => 창 작아짐 */
 	public static boolean SCENE_SWITCH = true;
 	/** true => 창이동가능, false =>창이동불가 */
 	public static boolean WINDOW_SWITCH = false;
 	/** 라운드(창이동과 크기변경에 속하는 변수 */
 	public static int round = 0;
+	/** 맵(실제 라운드맵 카운팅) */
+	public static int map = 1;
 	/** 충돌위치 저장리스트 */
 	ArrayList<PlatForm> list_plat = new ArrayList<>();
-	/** 아이템 위치 저장리스트 */
+	/** 아이템 위치 저장테이블 */
 	Hashtable<String, Item> table_item = new Hashtable<>();
 
 	/** 생성자 클래스 (한번초기화되는부분) */
@@ -142,7 +148,7 @@ public class Game {
 			if (pos_x >= plat.getPoint_1_x() - 5 && pos_x <= plat.getPoint_2_x() + 5
 					&& pos_y + 45 >= plat.getPoint_2_y() + 5 && pos_y + 45 <= plat.getPoint_2_y() + 15) {
 				vec_jump = 0;
-				if (time > 1) {
+				if (time > 2) {
 					time = 0;
 				}
 			}
@@ -168,9 +174,16 @@ public class Game {
 		list_plat.add(new PlatForm(500, 410, 650, 440));
 		list_plat.add(new PlatForm(700, 310, 850, 340));
 		list_plat.add(new PlatForm(900, 210, 1050, 240));
+		list_plat.add(new PlatForm(300, 510, 450, 540));
+		list_plat.add(new PlatForm(300, 310, 450, 340));
+		list_plat.add(new PlatForm(100, 210, 250, 240));
+		list_plat.add(new PlatForm(50, 110, 200, 140));
+
 		table_item.put("item_1", new Item_1(965, 150));
 		table_item.put("item_2", new Item_2(1500, 600));
-
+		table_item.put("item_bad_1", new Item_Bad(750, 450));
+		table_item.put("item_bad_1", new Item_Bad(878-15, 579-40));
+		
 	}
 
 	/** 아이템획득시 이벤트관리메소드 */
@@ -187,7 +200,6 @@ public class Game {
 			Item item = table_item.get(str);
 			if (contains(item)) {
 				item.event();
-				item.delete();
 			}
 
 		}
@@ -265,6 +277,12 @@ public class Game {
 		return true;
 	}
 
+	/** 다음맵 이동 메소드 */
+	public boolean NextMap() {
+
+		return true;
+	}
+
 	/** 패널 클래스(화면생성, 스케줄러에서 사용됨) */
 	private class MyPanel extends JPanel {
 		public void paintComponent(Graphics g) {
@@ -273,23 +291,15 @@ public class Game {
 			g.setColor(Color.GREEN);
 			g.fillOval((int) pos_x, (int) pos_y, SIZE, SIZE);
 
-			g.setColor(Color.BLUE);
-			g.fillRect(100, 580, 150, 30);// (100,610)-(250,610)-(250,640)-(100,640) ==> (x,y+30)....
+			Iterator<PlatForm> iter_list_plat = list_plat.iterator();
+			Set<String> keys = table_item.keySet();
+			Iterator<String> iter_table_item = keys.iterator();
 
 			g.setColor(Color.BLUE);
-			g.fillRect(900, 580, 150, 30);
-
-			g.setColor(Color.BLUE);
-			g.fillRect(700, 480, 150, 30);
-
-			g.setColor(Color.BLUE);
-			g.fillRect(500, 380, 150, 30);
-
-			g.setColor(Color.BLUE);
-			g.fillRect(700, 280, 150, 30);
-
-			g.setColor(Color.BLUE);
-			g.fillRect(900, 180, 150, 30);
+			while (iter_list_plat.hasNext()) {
+				PlatForm p = iter_list_plat.next();
+				g.fillRect(p.getPoint_1_x() + 10, p.getPoint_1_y() - 30, 150, 30);
+			}
 
 			g.setColor(Color.BLACK);
 			g.fillOval((int) table_item.get("item_1").getPos_x(), (int) table_item.get("item_1").getPos_y(),
@@ -298,6 +308,16 @@ public class Game {
 			g.setColor(Color.RED);
 			g.fillOval((int) table_item.get("item_2").getPos_x(), (int) table_item.get("item_2").getPos_y(),
 					(int) (SIZE / 1.5), (int) (SIZE / 1.5));
+
+			g.setColor(Color.ORANGE);
+			while (iter_table_item.hasNext()) {
+
+				String s = iter_table_item.next();
+				if (s.contains("bad")) {
+					Item i = table_item.get(s);
+					g.fillOval((int) i.getPos_x(), (int) i.getPos_y(), (int) (SIZE / 1.5), (int) (SIZE / 1.5));
+				}
+			}
 
 			// Graphics2D g2 = (Graphics2D) g;
 
